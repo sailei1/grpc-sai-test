@@ -1,0 +1,36 @@
+ grpc-gateway  练手
+
+https://segmentfault.com/a/1190000013339403
+https://segmentfault.com/a/1190000013408485
+https://segmentfault.com/a/1190000013513469
+
+个人难点
+
+1  编译proto  "google/api/annotations.proto" 找不到
+   复制 google 文件夹 到 proto 下面
+   修改 编译命令
+   protoc \
+   	-I. \
+   	-I ${GOPATH}/src \
+   	--grpc-gateway_out=logtostderr=true:. \
+   	--go_out=plugins=grpc:. *.proto
+
+
+2 go run main.go server
+ http: TLS handshake error from 127.0.0.1:57921: remote error: tls: bad certificate
+
+解决办法  生成本地https证书 注意hostname一致， 我用的是 grpc.sai
+
+3   go run main.go server  server/server.go:16:2: assetfs redeclared as imported package name
+
+解决办法
+
+  //"github.com/elazarl/go-bindata-assetfs"
+
+   go get github.com/go-bindata/go-bindata/...
+   go get github.com/elazarl/go-bindata-assetfs/...
+
+  go-bindata --nocompress -pkg swagger -o  swagger/datafile.go third_party/swagger-ui/...
+
+
+
