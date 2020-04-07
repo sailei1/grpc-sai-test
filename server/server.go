@@ -3,19 +3,13 @@ package server
 import (
 	"crypto/tls"
 	assetfs "github.com/elazarl/go-bindata-assetfs"
+	"github.com/golang/glog"
 	"log"
 	"net"
 	"net/http"
 	"path"
 	"strings"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	//"github.com/elazarl/go-bindata-assetfs"
-
-	pb "grpc-sai-test/proto"
 	"grpc-sai-test/swagger"
 	"grpc-sai-test/util"
 )
@@ -31,7 +25,7 @@ var (
 	tlsConfig *tls.Config
 )
 
-func Serve() (err error) {
+func Run() (err error) {
 	EndPoint = ":" + ServerPort
 	tlsConfig = util.GetTLSConfig(CertPemPath, CertKeyPath)
 
@@ -51,9 +45,31 @@ func Serve() (err error) {
 	return err
 }
 
+func preflightHandler(w http.ResponseWriter, r *http.Request) {
+	headers := []string{"Content-Type", "Accept"}
+	w.Header().Set("Access-Control-Allow-Headers", strings.Join(headers, ","))
+	methods := []string{"GET", "HEAD", "POST", "PUT", "DELETE"}
+	w.Header().Set("Access-Control-Allow-Methods", strings.Join(methods, ","))
+	glog.Infof("preflight request for %s", r.URL.Path)
+	return
+}
+
+func allowCORS(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if origin := r.Header.Get("Origin"); origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			if r.Method == "OPTIONS" && r.Header.Get("Access-Control-Request-Method") != "" {
+				preflightHandler(w, r)
+				return
+			}
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
 func newServer(conn net.Listener) *http.Server {
-	grpcServer := newGrpc()
-	gwmux, err := newGateway()
+	grpcServer := newGrpc(CertPemPath,CertKeyPath)
+	gwmux, err := newGateway(CertPemPath,CertServerName)
 	if err != nil {
 		panic(err)
 	}
@@ -65,43 +81,12 @@ func newServer(conn net.Listener) *http.Server {
 
 	return &http.Server{
 		Addr:      EndPoint,
-		Handler:   util.GrpcHandlerFunc(grpcServer, mux),
+		Handler:   util.GrpcHandlerFunc(grpcServer,allowCORS(mux)),
 		TLSConfig: tlsConfig,
 	}
 }
 
-func newGrpc() *grpc.Server {
-	creds, err := credentials.NewServerTLSFromFile(CertPemPath, CertKeyPath)
-	if err != nil {
-		panic(err)
-	}
 
-	opts := []grpc.ServerOption{
-		grpc.Creds(creds),
-	}
-
-	server := grpc.NewServer(opts...)
-
-	pb.RegisterHelloWorldServer(server, NewHelloService())
-
-	return server
-}
-
-func newGateway() (http.Handler, error) {
-	ctx := context.Background()
-	dcreds, err := credentials.NewClientTLSFromFile(CertPemPath, CertServerName)
-	if err != nil {
-		return nil, err
-	}
-	dopts := []grpc.DialOption{grpc.WithTransportCredentials(dcreds)}
-
-	gwmux := runtime.NewServeMux()
-	if err := pb.RegisterHelloWorldHandlerFromEndpoint(ctx, gwmux, EndPoint, dopts); err != nil {
-		return nil, err
-	}
-
-	return gwmux, nil
-}
 
 func serveSwaggerFile(w http.ResponseWriter, r *http.Request) {
 	if !strings.HasSuffix(r.URL.Path, "swagger.json") {

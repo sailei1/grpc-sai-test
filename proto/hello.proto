@@ -10,6 +10,9 @@ service HelloWorld {
 			post: "/hello_world"
             body: "*"
 		};
+//        option (google.api.http)={
+//            get: "/hello_world/{referer}"
+//        };
     }
 }
 

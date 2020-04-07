@@ -34,3 +34,7 @@ https://segmentfault.com/a/1190000013513469
 
 
 
+https://127.0.0.1:50052/swagger-ui/
+https://127.0.0.1:50052/swagger/hello.swagger.json
+
+

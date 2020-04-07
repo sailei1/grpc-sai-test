@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package proto;
+
+import "google/api/annotations.proto";
+
+service Test {
+    rpc SayTest(TestRequest) returns (TestResponse) {
+        option (google.api.http) = {
+			post: "/test"
+            body: "*"
+		};
+//        option (google.api.http)={
+//            get: "/hello_world/{referer}"
+//        };
+    }
+}
+
+message TestRequest {
+    string referer = 1;
+}
+
+message TestResponse {
+    string message = 1;
+}
