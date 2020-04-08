@@ -22,13 +22,13 @@ func main() {
 		log.Println(err)
 	}
 
-	c := pb.NewHelloWorldClient(conn)
+	c := pb.NewTestClient(conn)
 	context := context.Background()
-	body := &pb.HelloWorldRequest{
+	body := &pb.TestRequest{
 		Referer: "Grpc",
 	}
 
-	r, err := c.SayHelloWorld(context, body)
+	r, err := c.SayTest(context, body)
 	if err != nil {
 		log.Println(err)
 	}

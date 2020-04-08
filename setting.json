@@ -1,6 +1,6 @@
 {
   "driverName": "mysql",
-  "dataSourceName": "root:123456@tcp(127.0.0.1:3306)/todolist?charset=utf8",
+  "dataSourceName": "root:3618@tcp(127.0.0.1:3306)/todolist?parseTime=True&timeout=5s&charset=utf8mb4&loc=Local",
   "redisConnectAddress": "127.0.0.1:6379",
   "redisConnectPassword": ""
 }
